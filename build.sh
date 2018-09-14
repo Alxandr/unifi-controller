@@ -2,7 +2,7 @@
 #
 # Run this to build, tag and create fat-manifest for your images
 
-set -ex
+set -e
 
 if [[ -f .env ]]; then
 	source .env
@@ -35,11 +35,13 @@ for docker_arch in ${TARGET_ARCHES}; do
 		;;
 	esac
 	cat Dockerfile.cross | sed "s|__BASEIMAGE_ARCH__|${docker_arch}|g" >Dockerfile.${docker_arch}
-	#sed -i '' "s|__BASEIMAGE_ARCH__|${docker_arch}|g" Dockerfile.${docker_arch}
 	if ! [[ ${docker_arch} == "amd64" || ${build_os} == "darwin" ]]; then
 		cat Dockerfile.${docker_arch} | sed '/FROM/s/.*/&\
-COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' >Dockerfile.${docker_arch}
+COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' >Dockerfile.tmp
+		rm Dockerfile.${docker_arch}
+		mv Dockerfile.tmp Dockerfile.${docker_arch}
 	fi
+
 	docker build -f Dockerfile.${docker_arch} -t ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION} .
 	arch_images="${arch_images} ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
 	rm Dockerfile.${docker_arch}

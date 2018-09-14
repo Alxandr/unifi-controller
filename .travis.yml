@@ -5,4 +5,4 @@ services:
 
 before_install: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 script:
-  - bash ./build.sh
+  - bash -x ./build.sh
