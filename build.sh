@@ -2,7 +2,7 @@
 #
 # Run this to build, tag and create fat-manifest for your images
 
-set -e
+set -ex
 
 if [[ -f .env ]]; then
 	source .env
