@@ -34,11 +34,11 @@ for docker_arch in ${TARGET_ARCHES}; do
 		exit 1
 		;;
 	esac
-	cp Dockerfile.cross Dockerfile.${docker_arch}
-	sed -i '' "s|__BASEIMAGE_ARCH__|${docker_arch}|g" Dockerfile.${docker_arch}
+	cat Dockerfile.cross | sed "s|__BASEIMAGE_ARCH__|${docker_arch}|g" >Dockerfile.${docker_arch}
+	#sed -i '' "s|__BASEIMAGE_ARCH__|${docker_arch}|g" Dockerfile.${docker_arch}
 	if ! [[ ${docker_arch} == "amd64" || ${build_os} == "darwin" ]]; then
-		sed -i '' '/FROM/s/.*/&\
-COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' Dockerfile.${docker_arch}
+		cat Dockerfile.${docker_arch} | sed '/FROM/s/.*/&\
+COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' >Dockerfile.${docker_arch}
 	fi
 	docker build -f Dockerfile.${docker_arch} -t ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION} .
 	arch_images="${arch_images} ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
