@@ -16,3 +16,6 @@ for target_arch in ${BUILD_ARCHS}; do
 done
 
 ls -la ${ABS_FROM}/qemu
+cat $HOME/.docker/config.json | jq '.experimental = "enabled"' >tmp.json
+rm $HOME/.docker/config.json
+mv tmp.json $HOME/.docker/config.json
