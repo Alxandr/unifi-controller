@@ -6,7 +6,7 @@ QEMU_VERSION="v2.9.1-1"
 BUILD_ARCHS="x86_64 aarch64 arm"
 
 ABS_FROM="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ABS_DEST="$(cd $1 && pwd)"
+ABS_DEST="$ABS_FROM"
 
 sudo docker run --rm --privileged multiarch/qemu-user-static:register
 
