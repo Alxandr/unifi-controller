@@ -46,16 +46,16 @@ log() {
 
 trap 'kill ${!}; exit_handler' SIGHUP SIGINT SIGQUIT SIGTERM
 
-rm -rf ${ODATADIR} ${OLOGDIR}
-mkdir -p ${DATADIR} ${LOGDIR}
-ln -s ${DATADIR} ${BASEDIR}/data
-ln -s ${RUNDIR} ${BASEDIR}/run
-ln -s ${LOGDIR} ${BASEDIR}/logs
-rm -rf {$ODATADIR} ${OLOGDIR}
-ln -s ${DATADIR} ${ODATADIR}
-ln -s ${LOGDIR} ${OLOGDIR}
-mkdir -p /var/cert ${CERTDIR}
-ln -s ${CERTDIR} /var/cert/unifi
+# rm -rf ${ODATADIR} ${OLOGDIR}
+# mkdir -p ${DATADIR} ${LOGDIR}
+# ln -s ${DATADIR} ${BASEDIR}/data
+# ln -s ${RUNDIR} ${BASEDIR}/run
+# ln -s ${LOGDIR} ${BASEDIR}/logs
+# rm -rf {$ODATADIR} ${OLOGDIR}
+# ln -s ${DATADIR} ${ODATADIR}
+# ln -s ${LOGDIR} ${OLOGDIR}
+# mkdir -p /var/cert ${CERTDIR}
+# ln -s ${CERTDIR} /var/cert/unifi
 
 # vars similar to those found in unifi.init
 MONGOPORT=27117

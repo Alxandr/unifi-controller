@@ -40,7 +40,7 @@ services:
     image: bash
     depends_on:
       - unifi
-    command: bash -c 'tail -f /unifi/log/*'
+    command: bash -c 'ls -la /unifi/log && tail -f /unifi/log/server.log'
     restart: always
     volumes:
       - log:/unifi/log
