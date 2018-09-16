@@ -1,72 +1,244 @@
 #!/bin/bash
-#
-# Run this to build, tag and create fat-manifest for your images
 
 set -e
 
-if [[ -f .env ]]; then
-	source .env
-else
-	echo ERROR: .env not found.
-	exit 1
+REPO="alxandr"
+IMAGE_NAME="unifi-controller"
+IMAGE_VERSION=${TRAVIS_TAG:-"latest"}
+TARGET_ARCHES="amd64 arm32v6 arm64v8"
+DOCKER_FILE="Dockerfile.cross"
+PUSH=false
+RUN=false
+
+# standard output may be used as a return value in the functions
+# we need a way to write text on the screen in the functions so that
+# it won't interfere with the return value.
+# Exposing stream 3 as a pipe to standard output of the script itself
+exec 3>&1
+
+# Setup some colors to use. These need to work in fairly limited shells, like the Ubuntu Docker container where there are only 8 colors.
+# See if stdout is a terminal
+if [ -t 1 ]; then
+	# see if it supports colors
+	ncolors=$(tput colors)
+	if [ -n "$ncolors" ] && [ $ncolors -ge 8 ]; then
+		bold="$(tput bold || echo)"
+		normal="$(tput sgr0 || echo)"
+		black="$(tput setaf 0 || echo)"
+		red="$(tput setaf 1 || echo)"
+		green="$(tput setaf 2 || echo)"
+		yellow="$(tput setaf 3 || echo)"
+		blue="$(tput setaf 4 || echo)"
+		magenta="$(tput setaf 5 || echo)"
+		cyan="$(tput setaf 6 || echo)"
+		white="$(tput setaf 7 || echo)"
+	fi
 fi
 
-# Fail on empty params
-if [[ -z ${REPO} || -z ${IMAGE_NAME} || -z ${TARGET_ARCHES} ]]; then
-	echo ERROR: Please set build parameters.
-	exit 1
-fi
+function say-err() {
+	printf "%b\n" "${red:-}ERROR: $1${normal:-}" >&2
+}
 
-# Determine OS and Arch.
-build_os=$(uname -s | tr '[:upper:]' '[:lower:]')
+function say() {
+	# using stream 3 (defined in the beginning) to not interfere with stdout of functions
+	# which may be used as return value
+	printf "%b\n" "${cyan:-}INFO:${normal:-} $1" >&3
+}
 
-if [[ -z ${IMAGE_VERSION} ]]; then
-	IMAGE_VERSION="latest"
-fi
+function say-verbose() {
+	if [ "$verbose" = true ]; then
+		say "$1"
+	fi
+}
 
-for docker_arch in ${TARGET_ARCHES}; do
-	case ${docker_arch} in
+function say-value() {
+	local verbose="$1"
+	local varname="$2"
+	local value="$3"
+	local msg="${green:-}$varname${normal:-}: ${yellow}$value${normal:-}"
+
+	if $verbose; then
+		say-verbose "$msg"
+	else
+		say "$msg"
+	fi
+}
+
+function contains() {
+	local list="$1"
+	local item="$2"
+	if [[ $list =~ (^|[[:space:]])"$item"($|[[:space:]]) ]]; then
+		# yes, list include item
+		return 0
+	fi
+
+	return 1
+}
+
+# Use in the the functions: eval $invocation
+invocation='say-verbose "Calling: ${yellow:-}${FUNCNAME[0]} ${green:-}$*${normal:-}"'
+
+function build-dockerfile() {
+	eval $invocation
+
+	local docker_arch=$1
+	local qemu_arch=$2
+	local docker_file=$3
+
+	local docker_file=$(cat "$docker_file" | sed "s|__BASEIMAGE_ARCH__|${docker_arch}|g")
+	if ! [[ ${docker_arch} == "amd64" || ${build_os} == "darwin" ]]; then
+		say "Injecting qemu-${qemu_arch}-static"
+		docker_file=$(sed '/FROM/s/.*/&\
+COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' <<<"$docker_file")
+	else
+		say "Qemu static not injected"
+	fi
+
+	cat <<<"$docker_file" >Dockerfile.${docker_arch}
+	say-value "false" "Docker file" "Dockerfile.${docker_arch}"
+	docker build -f Dockerfile.${docker_arch} -t ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION} . 1>&4
+
+	say-verbose "Delete dockerfile"
+	rm Dockerfile.${docker_arch}
+	echo "${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
+}
+
+function build-arch() {
+	eval $invocation
+
+	local arch=$1
+	local qemu_arch
+	case ${arch} in
 	amd64) qemu_arch="x86_64" ;;
 	arm32v[5-7]) qemu_arch="arm" ;;
 	arm64v8) qemu_arch="aarch64" ;;
 	*)
-		echo ERROR: Unknown target arch.
-		exit 1
+		say-err "Unknown target arch."
+		return 1
 		;;
 	esac
-	cat Dockerfile.cross | sed "s|__BASEIMAGE_ARCH__|${docker_arch}|g" >Dockerfile.${docker_arch}
-	if ! [[ ${docker_arch} == "amd64" || ${build_os} == "darwin" ]]; then
-		cat Dockerfile.${docker_arch} | sed '/FROM/s/.*/&\
-COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' >Dockerfile.tmp
-		rm Dockerfile.${docker_arch}
-		mv Dockerfile.tmp Dockerfile.${docker_arch}
+
+	say-value "false" "Docker arch" "$arch"
+	say-value "false" "Qemu arch" "$qemu_arch"
+	local image_tag=$(build-dockerfile "$arch" "$qemu_arch" "$DOCKER_FILE")
+	say-value "false" "Built tag" "$image_tag"
+
+	if $PUSH; then
+		say "Pushing image"
+		docker push "$image_tag" 1>&4
+	else
+		say "Not pushing image"
 	fi
 
-	docker build -f Dockerfile.${docker_arch} -t ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION} .
-	arch_images="${arch_images} ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
-	rm Dockerfile.${docker_arch}
-	docker push ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}
-done
+	echo "$image_tag"
+}
 
-echo INFO: Creating fat manifest for ${REPO}/${IMAGE_NAME}:${IMAGE_VERSION}
-echo INFO: with subimages: ${arch_images}
-if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
-	rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
-fi
-docker manifest create ${REPO}/${IMAGE_NAME}:${IMAGE_VERSION} ${arch_images}
-for docker_arch in ${TARGET_ARCHES}; do
-	case ${docker_arch} in
-	amd64) annotate_flags="--os linux --arch amd64" ;;
-	arm32v[5-7]) annotate_flags="--os linux --arch arm" ;;
-	arm64v8) annotate_flags="--os linux --arch arm64 --variant v8" ;;
+function build-manifest() {
+	eval $invocation
+
+	local arches="$1"
+	local manifest_image="${REPO}/${IMAGE_NAME}:${IMAGE_VERSION}"
+	say "Creating fat manifest ${magenta}$manifest_image${normal:-} for ${yellow}$arches${normal:-}"
+
+	if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
+		rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
+	fi
+
+	local arch_images=""
+	for docker_arch in ${TARGET_ARCHES}; do
+		local image="${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
+		say "Pulling image ${yellow}$image${normal:-}"
+		docker pull "$image" 1>&4
+		arch_images="$arch_images $image"
+	done
+
+	say-value "true" "Arch images" "$arch_images"
+	say-verbose "docker manifest create "$manifest_image" ${arch_images}"
+	docker manifest create "$manifest_image" ${arch_images} 1>&4
+
+	for docker_arch in ${TARGET_ARCHES}; do
+		local image="${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
+		local annotate_flags
+		case ${docker_arch} in
+		amd64) annotate_flags="--os linux --arch amd64" ;;
+		arm32v[5-7]) annotate_flags="--os linux --arch arm" ;;
+		arm64v8) annotate_flags="--os linux --arch arm64 --variant v8" ;;
+		*)
+			say-err "Non supported arch: $docker_arch, must be one of: $TARGET_ARCHES"
+			return 1
+			;;
+		esac
+
+		say-value "false" "$image annotations" "$annotate_flags"
+		docker manifest annotate "$manifest_image" "$image" ${annotate_flags} 1>&4
+	done
+
+	say "Pushing manifest"
+	docker manifest push "$manifest_image"
+
+	if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
+		rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
+	fi
+}
+
+while getopts ":vpr" opt; do
+	case "$opt" in
+	v)
+		verbose=true
+		;;
+
+	p)
+		PUSH=true
+		;;
+
+	r)
+		RUN=true
+		;;
+
+	\?)
+		say-err "Invalid option: -$OPTARG"
+		;;
 	esac
-	echo INFO: Annotating arch: ${docker_arch} with \"${annotate_flags}\"
-	docker manifest annotate ${REPO}/${IMAGE_NAME}:${IMAGE_VERSION} ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION} ${annotate_flags}
 done
 
-echo INFO: Pushing manifest
-docker manifest push ${REPO}/${IMAGE_NAME}:${IMAGE_VERSION}
+shift $(($OPTIND - 1))
+ARCH=${1:-amd64}
 
-if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
-	rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
+if $verbose; then
+	say "pipe 4 to 3"
+	exec 4>&3
 fi
+
+build_os=$(uname -s | tr '[:upper:]' '[:lower:]')
+say-value "false" "Build OS" "$build_os"
+
+TRAVIS=${TRAVIS:-false}
+say-value "true" "Travis" "$TRAVIS"
+
+if $TRAVIS && ([ "$TRAVIS_BRANCH" = "master" ] || [ -z "$TRAVIS_TAG" ]); then
+	say-value "true" "Travis branch" "$TRAVIS_BRANCH"
+	say "Enabling push on travis master branch"
+	PUSH=true
+fi
+
+case $ARCH in
+manifest)
+	if $PUSH; then
+		build-manifest "$TARGET_ARCHES"
+	else
+		say-err "Manifest building requires $PUSH to be enabled"
+		exit 1
+	fi
+	;;
+
+*)
+	contains "$TARGET_ARCHES" "$ARCH" ||
+		(say-err "Non supported arch: $ARCH, must be one of: $TARGET_ARCHES" &&
+			exit 1)
+	image=$(build-arch "$ARCH")
+	if $RUN; then
+		exec docker run -it -p 8888:8888/tcp "$image"
+	fi
+	;;
+
+esac

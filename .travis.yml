@@ -8,6 +8,27 @@ addons:
     packages:
       - docker-ce
 
+jobs:
+  include:
+    - stage: build
+      env: ARCH=amd64
+      script: ./build.sh -v ${ARCH}
+
+    - stage: build
+      env: ARCH=arm32v6
+      script: ./build.sh -v ${ARCH}
+
+    - stage: build
+      env: ARCH=arm64v8
+      script: ./build.sh -v ${ARCH}
+
+    - stage: push
+      script: ./build.sh manifest
+
+stages:
+  - name: build
+  - name: push
+    if: branch = master
+
 before_install: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 install: bash -x ./travis-install.sh
-script: bash -x ./build.sh
