@@ -215,9 +215,10 @@ say-value "false" "Build OS" "$build_os"
 TRAVIS=${TRAVIS:-false}
 say-value "true" "Travis" "$TRAVIS"
 
-if $TRAVIS && ([ "$TRAVIS_BRANCH" = "master" ] || [ -z "$TRAVIS_TAG" ]); then
+if $TRAVIS && ([ "$TRAVIS_BRANCH" = "master" ] || ! [[ -z "$TRAVIS_TAG" ]]); then
 	say-value "true" "Travis branch" "$TRAVIS_BRANCH"
-	say "Enabling push on travis master branch"
+	say-value "true" "Travis tag" "${TRAVIS_TAG:-"NONE"}"
+	say "Enabling push on travis master branch/tag"
 	PUSH=true
 fi
 
