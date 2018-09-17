@@ -28,7 +28,7 @@ jobs:
 stages:
   - name: build
   - name: push
-    if: branch = master OR tag = true
+    if: branch = master OR tag =~ /^\d+\.\d+\.\d+/
 
 before_install: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 install: bash -x ./travis-install.sh
