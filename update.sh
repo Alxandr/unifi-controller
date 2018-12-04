@@ -2,6 +2,10 @@
 
 set -e
 
+eval "$(ssh-agent -s)"
+ssh-add
+ssh-add -l
+
 OWNER="alxandr"
 REPO="unifi-controller"
 
