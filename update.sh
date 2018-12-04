@@ -97,6 +97,7 @@ function update-version() {
 
 	if [[ "$currentVersion" != "$nextVersion" ]]; then
 		say "New version found. Creating new version release."
+		ssh-add -l -E md5 >&3
 		echo "$nextVersion" >VERSION
 		setup-git
 		git add VERSION
