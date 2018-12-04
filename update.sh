@@ -102,8 +102,8 @@ function update-version() {
 		git add VERSION
 		git commit -m "Update version to v$nextVersion"
 		git tag "v$nextVersion"
-		git push ssh://git@github.com:$OWNER/$REPO master
-		git push ssh://git@github.com:$OWNER/$REPO "v$nextVersion"
+		git push git@github.com:$OWNER/$REPO.git master
+		git push git@github.com:$OWNER/$REPO.git "v$nextVersion"
 	else
 		say "No new version available."
 	fi
