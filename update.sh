@@ -61,6 +61,7 @@ function say-value() {
 
 function install-node() {
 	if ! [[ -d "node_modules" ]]; then
+		source ~/.nvm/nvm.sh
 		nvm use stable
 		npm ci
 	fi
