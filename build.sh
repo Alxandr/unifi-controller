@@ -4,11 +4,17 @@ set -e
 
 REPO="alxandr"
 IMAGE_NAME="unifi-controller"
-IMAGE_VERSION=${TRAVIS_TAG:-"latest"}
+IMAGE_VERSIONS=("latest")
 TARGET_ARCHES="amd64 arm32v6 arm64v8"
 DOCKER_FILE="Dockerfile.cross"
 PUSH=false
 RUN=false
+CONTROLLER_VERSION=$(<VERSION)
+
+if ! [[ -z "$TRAVIS_TAG" ]]; then
+	TAG_VERSION=${TRAVIS_TAG//v/}
+	IMAGE_VERSIONS+=("$TAG_VERSION")
+fi
 
 # standard output may be used as a return value in the functions
 # we need a way to write text on the screen in the functions so that
@@ -96,11 +102,15 @@ COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' <<<"$docker_file")
 
 	cat <<<"$docker_file" >Dockerfile.${docker_arch}
 	say-value "false" "Docker file" "Dockerfile.${docker_arch}"
-	docker build -f Dockerfile.${docker_arch} -t ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION} . 1>&4
+	docker build --build-arg "VER=${CONTROLLER_VERSION}" -f Dockerfile.${docker_arch} -t ${REPO}/${IMAGE_NAME}:${docker_arch}-temp . 1>&4
+
+	for IMAGE_VERSION in "${IMAGE_VERSIONS[@]}"; do
+		docker tag ${REPO}/${IMAGE_NAME}:${docker_arch}-temp ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}
+		echo "${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
+	done
 
 	say-verbose "Delete dockerfile"
 	rm Dockerfile.${docker_arch}
-	echo "${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
 }
 
 function build-arch() {
@@ -120,65 +130,71 @@ function build-arch() {
 
 	say-value "false" "Docker arch" "$arch"
 	say-value "false" "Qemu arch" "$qemu_arch"
-	local image_tag=$(build-dockerfile "$arch" "$qemu_arch" "$DOCKER_FILE")
-	say-value "false" "Built tag" "$image_tag"
+	local image_tags=$(build-dockerfile "$arch" "$qemu_arch" "$DOCKER_FILE")
+	for imate_tag in "${image_tags[@]}"; do
+		say-value "false" "Built tag" "$imate_tag"
+	done
 
 	if $PUSH; then
-		say "Pushing image"
-		docker push "$image_tag" 1>&4
+		say "Pushing images"
+		for imate_tag in "${image_tags[@]}"; do
+			docker push "$image_tag" 1>&4
+		done
 	else
-		say "Not pushing image"
+		say "Not pushing images"
 	fi
 
-	echo "$image_tag"
+	echo "${image_tags[@]}"
 }
 
 function build-manifest() {
 	eval $invocation
 
-	local arches="$1"
-	local manifest_image="${REPO}/${IMAGE_NAME}:${IMAGE_VERSION}"
-	say "Creating fat manifest ${magenta}$manifest_image${normal:-} for ${yellow}$arches${normal:-}"
+	for IMAGE_VERSION in "${IMAGE_VERSIONS[@]}"; do
+		local arches="$1"
+		local manifest_image="${REPO}/${IMAGE_NAME}:${IMAGE_VERSION}"
+		say "Creating fat manifest ${magenta}$manifest_image${normal:-} for ${yellow}$arches${normal:-}"
 
-	if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
-		rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
-	fi
+		if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
+			rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
+		fi
 
-	local arch_images=""
-	for docker_arch in ${TARGET_ARCHES}; do
-		local image="${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
-		say "Pulling image ${yellow}$image${normal:-}"
-		docker pull "$image" 1>&4
-		arch_images="$arch_images $image"
+		local arch_images=""
+		for docker_arch in ${TARGET_ARCHES}; do
+			local image="${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
+			say "Pulling image ${yellow}$image${normal:-}"
+			docker pull "$image" 1>&4
+			arch_images="$arch_images $image"
+		done
+
+		say-value "true" "Arch images" "$arch_images"
+		say-verbose "docker manifest create "$manifest_image" ${arch_images}"
+		docker manifest create "$manifest_image" ${arch_images} 1>&4
+
+		for docker_arch in ${TARGET_ARCHES}; do
+			local image="${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
+			local annotate_flags
+			case ${docker_arch} in
+			amd64) annotate_flags="--os linux --arch amd64" ;;
+			arm32v[5-7]) annotate_flags="--os linux --arch arm" ;;
+			arm64v8) annotate_flags="--os linux --arch arm64 --variant v8" ;;
+			*)
+				say-err "Non supported arch: $docker_arch, must be one of: $TARGET_ARCHES"
+				return 1
+				;;
+			esac
+
+			say-value "false" "$image annotations" "$annotate_flags"
+			docker manifest annotate "$manifest_image" "$image" ${annotate_flags} 1>&4
+		done
+
+		say "Pushing manifest ${magenta}$manifest_image${normal:-}"
+		docker manifest push "$manifest_image"
+
+		if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
+			rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
+		fi
 	done
-
-	say-value "true" "Arch images" "$arch_images"
-	say-verbose "docker manifest create "$manifest_image" ${arch_images}"
-	docker manifest create "$manifest_image" ${arch_images} 1>&4
-
-	for docker_arch in ${TARGET_ARCHES}; do
-		local image="${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
-		local annotate_flags
-		case ${docker_arch} in
-		amd64) annotate_flags="--os linux --arch amd64" ;;
-		arm32v[5-7]) annotate_flags="--os linux --arch arm" ;;
-		arm64v8) annotate_flags="--os linux --arch arm64 --variant v8" ;;
-		*)
-			say-err "Non supported arch: $docker_arch, must be one of: $TARGET_ARCHES"
-			return 1
-			;;
-		esac
-
-		say-value "false" "$image annotations" "$annotate_flags"
-		docker manifest annotate "$manifest_image" "$image" ${annotate_flags} 1>&4
-	done
-
-	say "Pushing manifest"
-	docker manifest push "$manifest_image"
-
-	if [ -d ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION} ]; then
-		rm -rf ${HOME}/.docker/manifests/docker.io_${REPO}_${IMAGE_NAME}-${IMAGE_VERSION}
-	fi
 }
 
 while getopts ":vpr" opt; do
@@ -209,13 +225,15 @@ if $verbose; then
 	exec 4>&3
 fi
 
+say-value "false" "Controller Version" "$CONTROLLER_VERSION"
+
 build_os=$(uname -s | tr '[:upper:]' '[:lower:]')
 say-value "false" "Build OS" "$build_os"
 
 TRAVIS=${TRAVIS:-false}
 say-value "true" "Travis" "$TRAVIS"
 
-if $TRAVIS && ([ "$TRAVIS_BRANCH" = "master" ] || ! [[ -z "$TRAVIS_TAG" ]]); then
+if $TRAVIS && ! [[ -z "$TRAVIS_TAG" ]]; then
 	say-value "true" "Travis branch" "$TRAVIS_BRANCH"
 	say-value "true" "Travis tag" "${TRAVIS_TAG:-"NONE"}"
 	say "Enabling push on travis master branch/tag"

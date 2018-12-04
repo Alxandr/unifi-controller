@@ -2,7 +2,7 @@ FROM __BASEIMAGE_ARCH__/openjdk:8-alpine
 
 LABEL maintainer="Aleksander Heintz <alxandr@alxandr.me>"
 
-ENV VER=5.8.30
+ARG VER
 ENV PKGURL=http://www.ubnt.com/downloads/unifi/${VER}/UniFi.unix.zip
 ENV BASEDIR=/usr/lib/unifi \
   DATADIR=/unifi/data \

@@ -10,6 +10,9 @@ addons:
 
 jobs:
   include:
+    - stage: update
+      script: ./update.sh
+
     - stage: build
       env: ARCH=amd64
       script: ./build.sh -v ${ARCH}
@@ -26,9 +29,12 @@ jobs:
       script: ./build.sh manifest
 
 stages:
+  - name: update
+    if: branch = master
   - name: build
+    if: tag =~ /^\d+\.\d+\.\d+/
   - name: push
-    if: branch = master OR tag =~ /^\d+\.\d+\.\d+/
+    if: tag =~ /^\d+\.\d+\.\d+/
 
 before_install: echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 install: bash -x ./travis-install.sh

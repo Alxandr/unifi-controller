@@ -1,2 +1,3 @@
 Dockerfile.*
 !Dockerfile.cross
+node_modules
