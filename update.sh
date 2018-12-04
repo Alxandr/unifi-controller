@@ -85,6 +85,12 @@ function get-version() {
 	echo "$version"
 }
 
+function setup-git() {
+	git config --global user.email "travis@travis-ci.com"
+	git config --global user.name "Travis CI"
+	git config --global push.default current
+}
+
 function update-version() {
 	local currentVersion=$(get-current-version)
 	local nextVersion=$(get-version)
@@ -92,6 +98,7 @@ function update-version() {
 	if [[ "$currentVersion" != "$nextVersion" ]]; then
 		say "New version found. Creating new version release."
 		echo "$nextVersion" >VERSION
+		setup-git
 		git add VERSION
 		git commit -m "Update version to v$nextVersion"
 		git tag "v$nextVersion"
