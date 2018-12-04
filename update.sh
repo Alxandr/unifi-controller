@@ -1,10 +1,9 @@
 #!/bin/bash
 
-set -e
-
 eval "$(ssh-agent -s)"
 ssh-add
 ssh-add -l
+set -e
 
 OWNER="alxandr"
 REPO="unifi-controller"
