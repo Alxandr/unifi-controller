@@ -61,9 +61,9 @@ function say-value() {
 
 function install-node() {
 	if ! [[ -d "node_modules" ]]; then
-		source ~/.nvm/nvm.sh 1>&4
-		nvm use stable 1>&4
-		npm ci 1>&4
+		source ~/.nvm/nvm.sh 1>&3
+		nvm use stable 1>&3
+		npm ci 1>&3
 	else
 		say "Skipping node install, cause node_modules exist"
 	fi
