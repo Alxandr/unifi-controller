@@ -1,10 +1,5 @@
 #!/bin/bash
 
-eval "$(ssh-agent -s)"
-ssh-add
-ssh-add -l
-set -e
-
 OWNER="alxandr"
 REPO="unifi-controller"
 
@@ -100,12 +95,12 @@ function update-version() {
 
 	if [[ "$currentVersion" != "$nextVersion" ]]; then
 		say "New version found. Creating new version release."
-		say "PubKey: $(<~/.ssh/id_rsa.pub)"
 		echo "$nextVersion" >VERSION
 		setup-git
 		git add VERSION
 		git commit -m "Update version to v$nextVersion"
 		git tag "v$nextVersion"
+		say "Pushing to git@github.com:$OWNER/$REPO.git"
 		git push git@github.com:$OWNER/$REPO.git master
 		git push git@github.com:$OWNER/$REPO.git "v$nextVersion"
 	else
