@@ -129,21 +129,21 @@ function build-arch() {
 
 	say-value "false" "Docker arch" "$arch"
 	say-value "false" "Qemu arch" "$qemu_arch"
-	local image_tags=$(build-dockerfile "$arch" "$qemu_arch" "$DOCKER_FILE")
-	for image_tag in "${image_tags}"; do
+	local image_tags=($(build-dockerfile "$arch" "$qemu_arch" "$DOCKER_FILE"))
+	for image_tag in "${image_tags[@]}"; do
 		say-value "false" "Built tag" "$image_tag"
 	done
 
 	if $PUSH; then
 		say "Pushing images"
-		for image_tag in "${image_tags}"; do
+		for image_tag in "${image_tags[@]}"; do
 			docker push "$image_tag" 1>&4
 		done
 	else
 		say "Not pushing images"
 	fi
 
-	echo "${image_tags}"
+	echo "${image_tags[@]}"
 }
 
 function build-manifest() {
@@ -263,9 +263,9 @@ manifest)
 	contains "$TARGET_ARCHES" "$ARCH" ||
 		(say-err "Non supported arch: $ARCH, must be one of: $TARGET_ARCHES" &&
 			exit 1)
-	image=$(build-arch "$ARCH")
+	images=($(build-arch "$ARCH"))
 	if $RUN; then
-		exec docker run -it -p 8888:8888/tcp "$image"
+		exec docker run -it -p 8888:8888/tcp "${images[0]}"
 	fi
 	;;
 
