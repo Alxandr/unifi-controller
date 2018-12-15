@@ -11,11 +11,6 @@ PUSH=false
 RUN=false
 CONTROLLER_VERSION=$(<VERSION)
 
-if ! [[ -z "$TRAVIS_TAG" ]]; then
-	TAG_VERSION=${TRAVIS_TAG//v/}
-	IMAGE_VERSIONS+=("$TAG_VERSION")
-fi
-
 # standard output may be used as a return value in the functions
 # we need a way to write text on the screen in the functions so that
 # it won't interfere with the return value.
@@ -131,13 +126,13 @@ function build-arch() {
 	say-value "false" "Docker arch" "$arch"
 	say-value "false" "Qemu arch" "$qemu_arch"
 	local image_tags=$(build-dockerfile "$arch" "$qemu_arch" "$DOCKER_FILE")
-	for imate_tag in "${image_tags[@]}"; do
-		say-value "false" "Built tag" "$imate_tag"
+	for image_tag in "${image_tags[@]}"; do
+		say-value "false" "Built tag" "$image_tag"
 	done
 
 	if $PUSH; then
 		say "Pushing images"
-		for imate_tag in "${image_tags[@]}"; do
+		for image_tag in "${image_tags[@]}"; do
 			docker push "$image_tag" 1>&4
 		done
 	else
@@ -233,10 +228,20 @@ say-value "false" "Build OS" "$build_os"
 TRAVIS=${TRAVIS:-false}
 say-value "true" "Travis" "$TRAVIS"
 
+say-value "false" "Build OS" "$build_os"
+
 if $TRAVIS && ! [[ -z "$TRAVIS_TAG" ]]; then
+	TAG_VERSION=${TRAVIS_TAG//v/}
+	IMAGE_VERSIONS+=("$TAG_VERSION")
+
 	say-value "true" "Travis branch" "$TRAVIS_BRANCH"
 	say-value "true" "Travis tag" "${TRAVIS_TAG:-"NONE"}"
-	say "Enabling push on travis master branch/tag"
+	say "Enabling push on travis tag"
+	say "Image verisons:"
+	for IMAGE_VERSION in "${IMAGE_VERSIONS[@]}"; do
+		say " - ${IMAGE_VERSION}"
+	done
+
 	PUSH=true
 fi
 
