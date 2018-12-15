@@ -101,6 +101,7 @@ COPY qemu\/qemu-'${qemu_arch}'-static \/usr\/bin\//' <<<"$docker_file")
 
 	for IMAGE_VERSION in "${IMAGE_VERSIONS[@]}"; do
 		docker tag ${REPO}/${IMAGE_NAME}:${docker_arch}-temp ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}
+		say-verbose "Tagged ${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
 		echo "${REPO}/${IMAGE_NAME}:${docker_arch}-${IMAGE_VERSION}"
 	done
 
@@ -126,13 +127,13 @@ function build-arch() {
 	say-value "false" "Docker arch" "$arch"
 	say-value "false" "Qemu arch" "$qemu_arch"
 	local image_tags=$(build-dockerfile "$arch" "$qemu_arch" "$DOCKER_FILE")
-	for image_tag in "${image_tags[@]}"; do
+	for image_tag in "${image_tags}"; do
 		say-value "false" "Built tag" "$image_tag"
 	done
 
 	if $PUSH; then
 		say "Pushing images"
-		for image_tag in "${image_tags[@]}"; do
+		for image_tag in "${image_tags}"; do
 			docker push "$image_tag" 1>&4
 		done
 	else
