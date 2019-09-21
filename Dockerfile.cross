@@ -9,8 +9,6 @@ ENV BASEDIR=/usr/lib/unifi \
   LOGDIR=/unifi/log \
   CERTDIR=/unifi/cert \
   RUNDIR=/var/run/unifi \
-  ODATADIR=/var/lib/unifi \
-  OLOGDIR=/var/log/unifi \
   CERTNAME=cert.pem \
   CERT_PRIVATE_NAME=privkey.pem \
   CERT_IS_CHAIN=false \
@@ -34,7 +32,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
   && chmod +x /usr/unifi/init.d/import_cert \
   && chmod +x /usr/local/bin/docker-healthcheck.sh
 
-VOLUME ["/unifi", "${RUNDIR}"]
+VOLUME ["${DATADIR}", "${RUNDIR}", "${LOGDIR}"]
 EXPOSE 3478/udp 8080/tcp 8443/tcp 8880/tcp 8843/tcp 6789:6789/tcp 10001/udp 1900/udp
 WORKDIR /unifi
 
