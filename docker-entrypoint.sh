@@ -83,7 +83,8 @@ fi
 
 JVM_OPTS="${JVM_EXTRA_OPTS}
   -Djava.awt.headless=true
-  -Dfile.encoding=UTF-8"
+  -Dfile.encoding=UTF-8
+  -Dlog4j.configurationFile=file:/etc/unifi/log4j2.xml"
 
 # Cleaning /var/run/unifi/* See https://github.com/jacobalberty/unifi-docker/issues/26
 # Docker takes care of exlusivity in the container anyway.
@@ -170,7 +171,6 @@ if [[ "${@}" == "unifi" ]]; then
       usermod -o -u ${UNIFI_UID} unifi && groupmod -o -g ${UNIFI_GID} unifi
     fi
 
-    ln -sf /dev/stdout /unifi/log/server.log
     # Using a loop here so I can check more directories easily later
     for dir in ${DIRS}; do
       if [ "$(stat -c '%u' "${dir}")" != "${UNIFI_UID}" ]; then
