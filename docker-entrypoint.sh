@@ -84,7 +84,8 @@ fi
 JVM_OPTS="${JVM_EXTRA_OPTS}
   -Djava.awt.headless=true
   -Dfile.encoding=UTF-8
-  -Dlog4j.configurationFile=file:/etc/unifi/log4j2.xml"
+  -Dlog4j.configurationFile=file:/etc/unifi/log4j2.xml
+  -Dorg.xerial.snappy.tempdir=/unifi/tmp"
 
 # Cleaning /var/run/unifi/* See https://github.com/jacobalberty/unifi-docker/issues/26
 # Docker takes care of exlusivity in the container anyway.
