@@ -138,6 +138,15 @@ if [[ "${@}" == "unifi" ]]; then
     fi
   done
 
+  if [ -d "/usr/lib/jvm/java-1.8-openjdk/jre/lib/amd64/jli" ]; then
+    echo "/lib" >>/etc/ld-musl-x86_64.path
+    echo "/usr/lib" >>/etc/ld-musl-x86_64.path
+    echo "/usr/local/lib" >>/etc/ld-musl-x86_64.path
+    echo "/usr/lib/jvm/java-1.8-openjdk/jre/lib/amd64" >>/etc/ld-musl-x86_64.path
+    echo "/usr/lib/jvm/java-1.8-openjdk/jre/lib/amd64/jli" >>/etc/ld-musl-x86_64.path
+    echo "/usr/lib/jvm/java-1.8-openjdk/jre/lib/amd64/server" >>/etc/ld-musl-x86_64.path
+  fi
+
   if [ "${RUNAS_UID0}" == "true" ] || [ "${CUID}" != "0" ]; then
     if [ "${CUID}" == 0 ]; then
       log 'WARNING: Running UniFi in insecure (root) mode'
