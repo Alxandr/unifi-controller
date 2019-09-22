@@ -18,7 +18,7 @@ ENV BASEDIR=/usr/lib/unifi \
   UNIFI_UID=99
 
 COPY docker-build.sh /usr/local/bin/
-RUN apk add --no-cache su-exec shadow curl run-parts libcap bash \
+RUN apk add --no-cache su-exec shadow curl run-parts libcap bash libc6-compat \
   && mkdir -p /usr/unifi /usr/local/unifi/init.d /usr/unifi/init.d \
   && groupadd -r unifi -g $UNIFI_GID \
   && useradd --no-log-init -r -u $UNIFI_UID -g $UNIFI_GID unifi \
