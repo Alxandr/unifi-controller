@@ -4,9 +4,9 @@
     <InMemoryAppender name="InMemoryAppender" activatedLogging="false">
       <PatternLayout pattern="[%d{ISO8601}] &lt;%t&gt; %-5p %-6c{1} - %m%n" />
     </InMemoryAppender>
-    <File name="server_log" fileName="/dev/stdout">
+    <Console name="server_log" target="SYSTEM_OUT">
       <PatternLayout pattern="[%d{ISO8601}] &lt;%t&gt; %-5p %-6c{1} - %m%n" />
-    </File>
+    </Console>
   </Appenders>
   <Loggers>
     <Root level="INFO">
