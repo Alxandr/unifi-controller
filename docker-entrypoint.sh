@@ -161,6 +161,7 @@ if [[ "${@}" == "unifi" ]]; then
       usermod -o -u ${UNIFI_UID} unifi && groupmod -o -g ${UNIFI_GID} unifi
     fi
 
+    ln -sf /dev/stdout /unifi/log/server.log
     # Using a loop here so I can check more directories easily later
     for dir in ${DIRS}; do
       if [ "$(stat -c '%u' "${dir}")" != "${UNIFI_UID}" ]; then
