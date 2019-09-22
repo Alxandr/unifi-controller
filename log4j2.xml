@@ -25,11 +25,11 @@
     <Logger name="org.apache.tomcat" level="ERROR" />
     <Logger name="org.apache.commons" level="WARN" />
     <Logger name="org.apache.catalina" level="ERROR" />
-    <Logger name="com.mongodb" level="ERROR" />
-    <Logger name="org.mongodb" level="ERROR" />
+    <Logger name="com.mongodb" level="INFO" />
+    <Logger name="org.mongodb" level="INFO" />
 
-    <Logger name="org.springframework" level="WARN" />
-    <Logger name="de.javawi.jstun" level="WARN" />
+    <Logger name="org.springframework" level="INFO" />
+    <Logger name="de.javawi.jstun" level="INFO" />
 
     <Logger name="com.ubnt" level="INFO" />
     <Logger name="com.ubiquiti" level="INFO" />
