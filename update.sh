@@ -88,8 +88,8 @@ function update-version() {
     git commit -m "Update version to v$nextVersion"
     git tag "v$nextVersion"
     say "Pushing to https://github.com/$OWNER/$REPO.git"
-    git push https://${GITHUB_TOKEN}@github.com/$OWNER/$REPO.git "v$nextVersion":master
-    git push https://${GITHUB_TOKEN}@github.com/$OWNER/$REPO.git "v$nextVersion"
+    git push https://$OWNER:${GITHUB_TOKEN}@github.com/$REPO.git "v$nextVersion":master
+    git push https://$OWNER:${GITHUB_TOKEN}@github.com/$REPO.git "v$nextVersion"
   else
     say "No new version available."
   fi
