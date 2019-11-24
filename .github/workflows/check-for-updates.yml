@@ -14,4 +14,4 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v1
         with:
-          node-version: "latest"
+          node-version: "13.x"
