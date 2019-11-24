@@ -16,5 +16,8 @@ jobs:
         with:
           node-version: "13.x"
 
+      - name: Install node modules
+        run: npm ci
+
       - name: Check for updates
         run: ./update.sh
