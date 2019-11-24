@@ -1,6 +1,7 @@
 name: Continous Integration
 on:
-  - push
+  push:
+    branches: ["*"]
 
 jobs:
   build:
