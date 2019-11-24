@@ -20,4 +20,4 @@ jobs:
         run: npm ci
 
       - name: Check for updates
-        run: ./update.sh
+        run: env GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}" ./update.sh
