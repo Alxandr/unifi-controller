@@ -22,7 +22,7 @@ jobs:
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1
         with:
-          version: latest
+          version: "13.x"
 
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
