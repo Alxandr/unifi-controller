@@ -97,6 +97,7 @@ if [ -d "/unifi/init.d" ]; then
   run-parts "/unifi/init.d"
 fi
 
+mkdir -p "${DATADIR}"
 confFile="${DATADIR}/system.properties"
 if [ -e "$confFile" ]; then
   newfile=false
