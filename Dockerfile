@@ -28,7 +28,7 @@ RUN apk add --no-cache su-exec shadow curl run-parts libcap bash libc6-compat gc
 COPY log4j2.xml /etc/unifi/
 COPY import_cert /usr/unifi/init.d/
 
-FROM openjdk:8-alpine3.8
+FROM openjdk:13-alpine3.8
 
 LABEL maintainer="Aleksander Heintz <alxandr@alxandr.me>"
 
