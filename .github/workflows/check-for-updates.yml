@@ -15,7 +15,7 @@ jobs:
           token: ${{ secrets.GH_DEPLOY_TOKEN }}
 
       - name: Install node
-        uses: actions/setup-node@v2.3.2
+        uses: actions/setup-node@v2.4.0
         with:
           node-version: "13.x"
 
