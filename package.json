@@ -6,6 +6,6 @@
   "author": "Aleksander Heintz <alxandr@alxandr.me>",
   "license": "MIT",
   "dependencies": {
-    "node-fetch": "^2.6.1"
+    "node-fetch": "^3.0.0"
   }
 }
