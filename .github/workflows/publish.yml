@@ -1,4 +1,4 @@
-name: Publish
+name: Build & Publish
 on:
   workflow_dispatch: {}
   push:
@@ -28,12 +28,20 @@ jobs:
           version: latest
 
       - name: Docker login
+        if: github.ref == 'refs/heads/master'
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Available platforms
         run: echo ${{ steps.buildx.outputs.platforms }}
 
       - name: Run Buildx
+        run: |
+          docker buildx bake \
+            --set "controller.tags=ghcr.io/alxandr/unifi-controller:latest" \
+            --set "controller.tags=ghcr.io/alxandr/unifi-controller:v${UNIFI_CONTROLLER_VERSION}"
+
+      - name: Publish images
+        if: github.ref == 'refs/heads/master'
         run: |
           docker buildx bake \
             --set "controller.tags=ghcr.io/alxandr/unifi-controller:latest" \
