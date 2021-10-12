@@ -6,7 +6,7 @@
       "matchStrings": [
         "export UNIFI_CONTROLLER_VERSION=(?<currentValue>.*?)\n"
       ],
-      "depNameTemplate": "lscr.io/linuxserver/unifi-controller",
+      "depNameTemplate": "ghcr.io/linuxserver/unifi-controller",
       "datasourceTemplate": "docker"
     }
   ]
