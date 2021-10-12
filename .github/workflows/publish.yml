@@ -37,5 +37,5 @@ jobs:
         run: |
           docker buildx bake \
             --set "controller.tags=ghcr.io/alxandr/unifi-controller:latest" \
-            --set "controller.tags=ghcr.io/alxandr/unifi-controller:v$(UNIFI_CONTROLLER_VERSION)" \
+            --set "controller.tags=ghcr.io/alxandr/unifi-controller:v${UNIFI_CONTROLLER_VERSION}"
             --set "controller.output=type=registry"
