@@ -34,3 +34,5 @@ jobs:
           docker buildx bake \
             --set "controller.tags=ghcr.io/alxandr/unifi-controller:latest" \
             --set "controller.tags=ghcr.io/alxandr/unifi-controller:v${UNIFI_CONTROLLER_VERSION}"
+        env:
+          UNIFI_CONTROLLER_VERSION: ${UNIFI_CONTROLLER_VERSION}
