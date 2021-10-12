@@ -4,7 +4,7 @@
     {
       "fileMatch": "^\\.env$",
       "matchStrings": [
-        "export UNIFI_CONTROLLER_VERSION=(?<currentValue>.*?)\n"
+        "UNIFI_CONTROLLER_VERSION=(?<currentValue>.*?)\nBASE_IMAGE_DIGEST=(?<currentDigest>sha256:[a-f0-9]+)\n"
       ],
       "depNameTemplate": "ghcr.io/linuxserver/unifi-controller",
       "datasourceTemplate": "docker"
