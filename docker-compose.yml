@@ -9,9 +9,10 @@ services:
       - unifi
 
   unifi:
-    #image: alxandr/unifi-controller:${TAG:-latest}
     build:
       context: .
+      args:
+        - UNIFI_CONTROLLER_VERSION=${UNIFI_CONTROLLER_VERSION:-latest}
     init: true
     restart: unless-stopped
     depends_on:
