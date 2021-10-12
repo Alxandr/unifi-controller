@@ -1,0 +1,46 @@
+#!/usr/bin/with-contenv bash
+
+confFile="/usr/lib/unifi/data/system.properties"
+
+# Used to generate simple key/value pairs, for example system.properties
+confSet() {
+  file=$1
+  key=$2
+  value=$3
+  if [ "$newfile" != true ] && grep -q "^${key} *=" "$file"; then
+    ekey=$(echo "$key" | sed -e 's/[]\/$*.^|[]/\\&/g')
+    evalue=$(echo "$value" | sed -e 's/[\/&]/\\&/g')
+    sed -i "s/^\(${ekey}\s*=\s*\).*$/\1${evalue}/" "$file"
+  else
+    echo "${key}=${value}" >>"$file"
+  fi
+}
+
+h2mb() {
+  awkcmd='
+    /[0-9]$/{print $1/1024/1024;next};
+    /[mM]$/{printf "%u\n", $1;next};
+    /[kK]$/{printf "%u\n", $1/1024;next}
+    /[gG]$/{printf "%u\n", $1*1024;next}
+  '
+  echo $1 | awk "${awkcmd}"
+}
+
+declare -A settings
+
+if ! [[ -z "$MEM_LIMIT" ]]; then
+  settings["unifi.G1GC.enabled"]="true"
+  settings["unifi.xms"]="$(h2mb ${MEM_STARTUP:-1024M})"
+  settings["unifi.xmx"]="$(h2mb ${MEM_LIMIT})"
+fi
+
+if ! [[ -z "$DB_NAME" ]]; then
+  settings["db.mongo.local"]="false"
+  settings["db.mongo.uri"]="$DB_URI"
+  settings["statdb.mongo.uri"]="$STATDB_URI"
+  settings["unifi.db.name"]="$DB_NAME"
+fi
+
+for key in "${!settings[@]}"; do
+  confSet "$confFile" "$key" "${settings[$key]}"
+done
